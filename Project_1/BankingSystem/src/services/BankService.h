@@ -23,15 +23,15 @@ public:
     User createUser(const std::string &name, int pin);
     Account createAccount(int userId);
 
-    Account *getAccountByUserId(int userId);
+    Account *getAccountByUserId(int userId) ;
 
     // Login
     bool login(int userId, int pin) const;
 
-    //Transaction
-    bool deposit(int userId,double amount);
-    bool withdraw(int userId,double amount);
+    // Transaction
+    bool deposit(int userId, double amount);
+    bool withdraw(int userId, double amount);
 
-
+    double getBalance(int userId);
 };
 #endif

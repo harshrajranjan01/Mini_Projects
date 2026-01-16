@@ -125,6 +125,16 @@ int main()
 
             else if (choice == 3)
             {
+                double balance = bank.getBalance(currentUserId);
+
+                if (balance < 0)
+                {
+                    std::cout << "No account found.\n";
+                }
+                else
+                {
+                    std::cout << "Current Balance: " << balance << "\n";
+                }
             }
 
             else if (choice == 4)

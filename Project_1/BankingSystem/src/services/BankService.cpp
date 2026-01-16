@@ -85,3 +85,15 @@ bool BankService::withdraw(int userId, double amount)
     }
     return account->withdraw(amount);
 }
+
+double BankService::getBalance(int userId)
+{
+    Account *account = getAccountByUserId(userId);
+
+    if (account == nullptr)
+    {
+        return -1; // indicates error / no account
+    }
+
+    return account->getBalance();
+}
