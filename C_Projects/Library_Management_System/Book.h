@@ -1,42 +1,41 @@
 #ifndef BOOK_H
 #define BOOK_H
 
-#include <iostream>
+#include <iosfwd>
 #include <string>
-using namespace std;
 
 class Book
 {
 private:
     int id;
-    string title;
+    std::string title;
     float price;
 
-    static int bookCount; // Count Number of books object are created (must be static)
+    static int bookCount;
 
 public:
     Book();
-    Book(int, string, float); //// may throw exception
+    Book(int id, std::string title, float price);
+    Book(const Book &other);
+
     void display() const;
+    void setData(int id, std::string title, float price);
+    void setData(int id, std::string title);
+    void setPrice(float newPrice);
 
-    Book(const Book &); // copy constructor
+    static int getBookCount();
 
-    void setData(int, string, float); // set id, name, and price to books;
-    void setData(int, string);        // run in case, the price of book is not known at that time
+    friend std::istream &operator>>(std::istream &in, Book &book);
+    friend std::ostream &operator<<(std::ostream &out, const Book &book);
 
-    static int getBookCount(); // static funciton
+    Book &operator++();
 
-    friend istream &operator>>(istream &, Book &); // these need iostream library
-    friend ostream &operator<<(ostream &, const Book &);
-
-    Book operator++(); // Preincrement operator
-
-    // File Handling
-
-    void writeToFile() const;
-    static void readAllFromFile();
-
-    static bool updatePriceById(int SearchId, float newPrice);
+    bool writeToFile(std::ostream &out) const;
+    static bool writeFileHeader(std::ostream &out);
+    static bool readFileHeader(std::istream &in);
+    bool readFromFile(std::istream &in);
+    static bool readAllFromFile();
+    static bool updatePriceById(int searchId, float newPrice);
 
     int getId() const;
     float getPrice() const;
