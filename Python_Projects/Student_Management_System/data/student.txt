@@ -1,0 +1,5 @@
+Harsh Raj Ranjan|38|21|Python,CNS,HSN,Economics,CG|90,100,70,50,95|Pentesting,soc,Cybersecurity
+Aditya Singh|60|21|Python,CNS,HSN,Economics,CG|85,90,75,80,95|Pentesting,soc,Cybersecurity
+Priyesh Mishra|04|21|Python,CNS,HSN,Economics,CG|90,85,80,75,95|Computer Graphics,OpenGL,2D Transformations
+Danish Khan|14|21|Python,CNS,HSN,Economics,CG|88,92,75,85,90|GATE Preparation,DSA,Operating Systems,Computer Networks
+Ajay|16|21|Python,CNS,HSN,Economics,CG|80,85,90,75,88|Python,Photography,Problem Solving
