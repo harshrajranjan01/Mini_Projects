@@ -55,8 +55,8 @@ bool BankService::deposit(int userId, double amount)
         if (acc.getUserId() == userId)
         {
             account = &acc;
+            break;
         }
-        break;
     }
 
     if (account == nullptr)
