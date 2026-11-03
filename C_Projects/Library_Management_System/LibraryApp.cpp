@@ -2,30 +2,41 @@
 #include "LibraryService.h"
 
 #include <iostream>
-
-using namespace std;
+#include <limits>
 
 void LibraryApp::run()
 {
     LibraryService services;
-    int choice;
+    int choice = -1;
 
-    do
+    while (true)
     {
-        cout << "\n....IBRARY MANAGEMENT SYSTEM...\n";
-        cout << "1. Add Book" << endl;
-        cout << "2. Display Books" << endl;
-        cout << "3. Sort Books" << endl;
-        cout << "4. Search Book" << endl;
-        cout << "5. File Operations" << endl;
-        cout << "6. Student Fine" << endl;
-        cout << "0. Exit" << endl;
-        cout << "Enter choice: " << endl;
-        ;
-        cin >> choice;
+        std::cout << "\n....LIBRARY MANAGEMENT SYSTEM....\n"
+                  << "1. Add Book\n"
+                  << "2. Display Books\n"
+                  << "3. Sort Books\n"
+                  << "4. Search Book\n"
+                  << "5. File Operations\n"
+                  << "6. Student Fine\n"
+                  << "0. Exit\n"
+                  << "Enter choice: ";
+
+        if (!(std::cin >> choice))
+        {
+            if (std::cin.eof())
+            {
+                return;
+            }
+            std::cin.clear();
+            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+            std::cout << "Invalid choice. Enter a menu number.\n";
+            continue;
+        }
 
         switch (choice)
         {
+        case 0:
+            return;
         case 1:
             services.addBook();
             break;
@@ -45,8 +56,8 @@ void LibraryApp::run()
             services.studentFine();
             break;
         default:
-            cout << "Invalid Choice" << endl;
+            std::cout << "Invalid choice.\n";
+            break;
         }
-
-    } while (choice != 0);
+    }
 }
