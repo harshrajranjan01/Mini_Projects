@@ -15,6 +15,9 @@ public:
     void displayAll() const;
     void sortByPrice(); // need to change the order of books arranged
     bool findById(int id) const;
+    bool updatePriceById(int id, float newPrice);
+    bool saveToFile() const;
+    bool loadFromFile();
 };
 
 #endif
