@@ -16,7 +16,7 @@ bool Account::deposit(double amount)
 
 bool Account::withdraw(double amount)
 {
-    if (amount <= 0 && amount > balance)
+    if (amount <= 0 || amount > balance)
     {
         return false;
     }
