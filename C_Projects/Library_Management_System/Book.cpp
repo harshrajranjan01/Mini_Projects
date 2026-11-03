@@ -1,57 +1,149 @@
 #include "Book.h"
-#include <iostream>
+
+#include <cmath>
+#include <cstdint>
 #include <fstream>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
-int Book::bookCount = 0;
-Book::Book() // Book Constructor outside class
+namespace
 {
+const char fileMagic[] = {'L', 'I', 'B', 'B', 'O', 'O', 'K', '1'};
+const std::uint32_t maxTitleLength = 1024U * 1024U;
 
-    id = 0;
-    title = "NA";
-    price = 0;
-    bookCount++;
+bool writeStorageHeader(std::ostream &out)
+{
+    out.write(fileMagic, sizeof(fileMagic));
+    return static_cast<bool>(out);
 }
 
-Book::Book(int i, string t, float p)
+bool readStorageHeader(std::istream &in)
 {
-    if (p < 0) // exception handling
+    char magic[sizeof(fileMagic)] = {};
+    if (!in.read(magic, sizeof(magic)))
     {
-        throw invalid_argument("Book Price Cannot Be negative");
+        return false;
     }
 
-    id = i;
-    title = t;
-    price = p;
-    bookCount++;
+    for (std::size_t i = 0; i < sizeof(fileMagic); ++i)
+    {
+        if (magic[i] != fileMagic[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool writeRecord(std::ostream &out, int id, const std::string &title, float price)
+{
+    if (title.size() > maxTitleLength ||
+        id < (std::numeric_limits<std::int32_t>::min)() ||
+        id > (std::numeric_limits<std::int32_t>::max)())
+    {
+        return false;
+    }
+
+    const std::int32_t storedId = static_cast<std::int32_t>(id);
+    const std::uint32_t titleLength = static_cast<std::uint32_t>(title.size());
+
+    out.write(reinterpret_cast<const char *>(&storedId), sizeof(storedId));
+    out.write(reinterpret_cast<const char *>(&titleLength), sizeof(titleLength));
+    if (!title.empty())
+    {
+        out.write(title.data(), static_cast<std::streamsize>(title.size()));
+    }
+    out.write(reinterpret_cast<const char *>(&price), sizeof(price));
+    return static_cast<bool>(out);
+}
+
+bool readRecord(std::istream &in, int &id, std::string &title, float &price,
+                std::streampos *pricePosition = 0)
+{
+    std::int32_t storedId = 0;
+    std::uint32_t titleLength = 0;
+    if (!in.read(reinterpret_cast<char *>(&storedId), sizeof(storedId)) ||
+        !in.read(reinterpret_cast<char *>(&titleLength), sizeof(titleLength)) ||
+        titleLength > maxTitleLength)
+    {
+        return false;
+    }
+
+    title.assign(titleLength, '\0');
+    if (titleLength > 0 &&
+        !in.read(&title[0], static_cast<std::streamsize>(titleLength)))
+    {
+        return false;
+    }
+
+    if (pricePosition)
+    {
+        *pricePosition = in.tellg();
+    }
+    if (!in.read(reinterpret_cast<char *>(&price), sizeof(price)))
+    {
+        return false;
+    }
+
+    id = static_cast<int>(storedId);
+    return true;
+}
+}
+
+int Book::bookCount = 0;
+
+Book::Book() : id(0), title("NA"), price(0.0f)
+{
+    ++bookCount;
+}
+
+Book::Book(int bookId, std::string bookTitle, float bookPrice)
+    : id(bookId), title(std::move(bookTitle)), price(bookPrice)
+{
+    if (!std::isfinite(bookPrice) || bookPrice < 0.0f)
+    {
+        throw std::invalid_argument("Book price cannot be negative");
+    }
+    ++bookCount;
+}
+
+Book::Book(const Book &other)
+    : id(other.id), title(other.title), price(other.price)
+{
+    ++bookCount;
 }
 
 void Book::display() const
 {
-    cout << "Id: " << id
-         << ", Title: " << title
-         << ", Price: " << price << endl;
+    std::cout << "Id: " << id
+              << ", Title: " << title
+              << ", Price: " << price << std::endl;
 }
 
-Book::Book(const Book &b)
+void Book::setData(int bookId, std::string bookTitle, float bookPrice)
 {
-    id = b.id;
-    title = b.title;
-    price = b.price;
-    bookCount++;
+    setPrice(bookPrice);
+    id = bookId;
+    title = std::move(bookTitle);
 }
 
-void Book::setData(int i, string t, float p)
+void Book::setData(int bookId, std::string bookTitle)
 {
-    id = i;
-    title = t;
-    price = p;
+    id = bookId;
+    title = std::move(bookTitle);
+    price = 0.0f;
 }
 
-void Book::setData(int i, string t)
+void Book::setPrice(float newPrice)
 {
-    id = i;
-    title = t;
-    price = 0;
+    if (!std::isfinite(newPrice) || newPrice < 0.0f)
+    {
+        throw std::invalid_argument("Book price cannot be negative");
+    }
+    price = newPrice;
 }
 
 int Book::getBookCount()
@@ -59,86 +151,142 @@ int Book::getBookCount()
     return bookCount;
 }
 
-istream &operator>>(istream &in, Book &b)
+std::istream &operator>>(std::istream &in, Book &book)
 {
-    cout << "Enter Id, Title and Price: " << endl;
-    cin >> b.id >> b.title >> b.price;
+    int newId = 0;
+    std::string newTitle;
+    float newPrice = 0.0f;
+
+    if (in >> newId >> newTitle >> newPrice)
+    {
+        if (!std::isfinite(newPrice) || newPrice < 0.0f)
+        {
+            in.setstate(std::ios::failbit);
+        }
+        else
+        {
+            book.id = newId;
+            book.title = std::move(newTitle);
+            book.price = newPrice;
+        }
+    }
     return in;
 }
 
-ostream &operator<<(ostream &out, const Book &b)
+std::ostream &operator<<(std::ostream &out, const Book &book)
 {
-    out << "Id: " << b.id
-        << " Title: " << b.title
-        << "Price: " << b.price << endl;
+    out << "Id: " << book.id
+        << ", Title: " << book.title
+        << ", Price: " << book.price;
     return out;
 }
 
-Book Book::operator++()
+Book &Book::operator++()
 {
-    price = price + 10; // increase price
+    price += 10.0f;
     return *this;
 }
 
-void Book::writeToFile() const
+bool Book::writeToFile(std::ostream &out) const
 {
-    ofstream fout("books.dat", ios::binary | ios::app);
-
-    if (!fout)
-    {
-        cout << "Error Opening File" << endl;
-        return;
-    }
-
-    fout.write((char *)this, sizeof(*this)); // this-> current object in memory
-    fout.close();
+    return writeRecord(out, id, title, price);
 }
 
-void Book::readAllFromFile()
+bool Book::writeFileHeader(std::ostream &out)
 {
-    ifstream fin("books.dat", ios::binary);
-    if (!fin)
-    {
-        cout << "File Not found" << endl;
-        return;
-    }
-
-    Book temp;
-
-    while (fin.read((char *)&temp, sizeof(temp)))
-    {
-        temp.display();
-    }
-    fin.close();
+    return writeStorageHeader(out);
 }
 
-bool Book::updatePriceById(int SearchId, float newPrice)
+bool Book::readFileHeader(std::istream &in)
 {
-    fstream file("books.dat", ios::binary | ios::in | ios::out);
+    return readStorageHeader(in);
+}
 
-    if (!file)
+bool Book::readFromFile(std::istream &in)
+{
+    int bookId = 0;
+    std::string bookTitle;
+    float bookPrice = 0.0f;
+    if (!readRecord(in, bookId, bookTitle, bookPrice) ||
+        !std::isfinite(bookPrice) || bookPrice < 0.0f)
     {
-        cout << "Failed TO open file" << endl;
         return false;
     }
 
-    Book temp;
+    id = bookId;
+    title = std::move(bookTitle);
+    price = bookPrice;
+    return true;
+}
 
-    while (file.read((char *)&temp, sizeof(temp)))
+bool Book::readAllFromFile()
+{
+    std::ifstream file("books.dat", std::ios::binary);
+    if (!file)
     {
-        if (temp.id == SearchId)
+        std::cout << "No saved books found." << std::endl;
+        return false;
+    }
+
+    if (!readFileHeader(file))
+    {
+        std::cout << "Unable to read the books file." << std::endl;
+        return false;
+    }
+
+    bool foundAny = false;
+    while (file.peek() != std::char_traits<char>::eof())
+    {
+        Book book;
+        if (!book.readFromFile(file))
         {
-            temp.price = newPrice;
+            std::cout << "Unable to read a book record." << std::endl;
+            return false;
+        }
 
-            int pos = -1 * (int)sizeof(temp);
-            file.seekp(pos, ios::cur);
+        book.display();
+        foundAny = true;
+    }
 
-            file.write((char *)&temp, sizeof(temp));
+    if (!foundAny)
+    {
+        std::cout << "No books saved in the file." << std::endl;
+    }
+    return true;
+}
 
-            return true;
+bool Book::updatePriceById(int searchId, float newPrice)
+{
+    if (!std::isfinite(newPrice) || newPrice < 0.0f)
+    {
+        return false;
+    }
+
+    std::fstream file("books.dat", std::ios::binary | std::ios::in | std::ios::out);
+    if (!file || !readFileHeader(file))
+    {
+        return false;
+    }
+
+    while (file.peek() != std::char_traits<char>::eof())
+    {
+        int id = 0;
+        std::string title;
+        float price = 0.0f;
+        std::streampos pricePosition;
+        if (!readRecord(file, id, title, price, &pricePosition))
+        {
+            return false;
+        }
+
+        if (id == searchId)
+        {
+            file.seekp(pricePosition);
+            file.write(reinterpret_cast<const char *>(&newPrice), sizeof(newPrice));
+            file.flush();
+            return static_cast<bool>(file);
         }
     }
-    file.close();
     return false;
 }
 
