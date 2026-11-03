@@ -62,7 +62,7 @@ int main()
 
                 if (bank.login(userId, pin))
                 {
-                    currentUserId == userId;
+                    currentUserId = userId;
                     std::cout << "Login sucessfully\n";
                 }
 
@@ -139,7 +139,7 @@ int main()
 
             else if (choice == 4)
             {
-                currentUserId == -1;
+                currentUserId = -1;
             }
             else
             {
