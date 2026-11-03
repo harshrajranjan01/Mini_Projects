@@ -8,6 +8,7 @@ private:
     Library library;
 
 public:
+    LibraryService();
     void addBook();
     void displayBooks() const;
     void sortBooks();
