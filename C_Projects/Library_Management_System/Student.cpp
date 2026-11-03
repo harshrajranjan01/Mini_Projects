@@ -1,5 +1,6 @@
 #include "Student.h"
 #include <iostream>
+#include <stdexcept>
 
 Student::Student(int Id, string n, int days) : User(Id, n) // Constructor chaining
 {
